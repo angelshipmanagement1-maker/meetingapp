@@ -78,6 +78,10 @@ See [DEPLOYMENT.md](./DEPLOYMENT.md) for detailed instructions.
 - **Redis** - Session storage and caching
 - **JWT** - Authentication tokens
 
+### Domain
+- **Primary**: `https://meetingapp.org`
+- **API**: `https://api.meetingapp.org`
+
 ### Real-time Features
 - **WebRTC** - Peer-to-peer video/audio
 - **Simple-Peer** - WebRTC wrapper library

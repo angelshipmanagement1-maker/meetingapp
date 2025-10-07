@@ -246,15 +246,21 @@ FRONTEND_URL=https://your-frontend.vercel.app
 ### Vercel Custom Domain
 
 1. Go to Vercel project settings
-2. Add custom domain
-3. Configure DNS records
+2. Add custom domain: `meetingapp.org`
+3. Configure DNS records as follows:
+   - **Type**: CNAME
+   - **Name**: `www`
+   - **Value**: `cname.vercel-dns.com`
+   - **Type**: A
+   - **Name**: `@`
+   - **Value**: `76.76.21.21`
 4. Update CORS origins in backend
 
 ### Backend Domain
 
 Update your backend deployment's domain in:
-- Frontend environment variables
-- Backend CORS settings
+- Frontend environment variables: `VITE_SERVER_URL=https://api.meetingapp.org`
+- Backend CORS settings: `CORS_ORIGINS=https://meetingapp.org,https://www.meetingapp.org`
 
 ---
 
