@@ -256,6 +256,29 @@ FRONTEND_URL=https://your-frontend.vercel.app
    - **Value**: `76.76.21.21`
 4. Update CORS origins in backend
 
+### How to Get Vercel Secrets
+
+#### 1. VERCEL_TOKEN
+- Go to [Vercel Account Settings](https://vercel.com/account/tokens)
+- Click "Create Token"
+- Give it a name (e.g., "GitHub Actions")
+- Copy the token value
+
+#### 2. VERCEL_ORG_ID
+- Go to [Vercel Teams](https://vercel.com/dashboard)
+- If using personal account, go to your profile
+- Copy the "Team ID" from the URL or settings
+- For personal accounts, it might be your username
+
+#### 3. VERCEL_PROJECT_ID
+- Go to your Vercel project dashboard
+- The Project ID is in the URL: `vercel.com/your-team/project-name`
+- Or find it in Project Settings → General → Project ID
+
+#### 4. Environment Variables
+- `VITE_SERVER_URL`: `https://api.meetingapp.org` (your backend URL)
+- `VITE_APP_NAME`: `MeetTime` (your app name)
+
 ### Backend Domain
 
 Update your backend deployment's domain in:
