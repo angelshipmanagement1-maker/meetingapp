@@ -109,11 +109,11 @@ class MeetingService {
 
       const participant = await meeting.removeParticipant(participantId);
 
-      // Terminate meeting only if no participants left
-      if (meeting.participants.size === 0) {
-        await meeting.terminate();
-        logger.info(`Meeting ${meetingId} terminated as no participants left`);
-      }
+      // For video conferencing, keep meetings active even when empty
+      // Meetings will be cleaned up by a scheduled job or when explicitly terminated by host
+      // This prevents accidental meeting termination when host refreshes or has connection issues
+
+      logger.info(`Participant ${participantId} left meeting ${meetingId}. ${meeting.participants.size} participants remaining`);
 
       return { meeting, participant };
     } catch (error) {
