@@ -65,7 +65,7 @@ export default function MeetingRoom() {
     return () => clearInterval(interval);
   }, []);
 
-  // Join meeting on component mount
+  // Check if user has entered their name before joining
   useEffect(() => {
     if (!meetingId) {
       console.error('MeetingRoom: No meeting ID provided');
@@ -74,13 +74,20 @@ export default function MeetingRoom() {
       return;
     }
 
-    const displayName = sessionStorage.getItem(STORAGE_KEYS.DISPLAY_NAME) || 'Anonymous';
+    const displayName = sessionStorage.getItem(STORAGE_KEYS.DISPLAY_NAME);
+    if (!displayName || displayName.trim() === '') {
+      console.log('MeetingRoom: No display name found, redirecting to PreJoin');
+      toast.info('Please enter your name to join the meeting');
+      navigate(`/prejoin?mid=${meetingId}`);
+      return;
+    }
+
     console.log('MeetingRoom: Starting join process', { meetingId, displayName, isHost });
-    
+
     // Show loading toast
     toast.info('Joining meeting...');
-    
-    // Always join with meetingId - let the backend handle creation
+
+    // Join meeting with the provided name
     joinMeeting(meetingId, displayName)
       .then(() => {
         console.log('MeetingRoom: Successfully joined meeting');
@@ -223,12 +230,11 @@ export default function MeetingRoom() {
           />
         )}
         {showParticipants && (
-          <ParticipantsList 
-            participants={meetingState.participants}
-            isHost={meetingState.isHost} 
-            onClose={() => setShowParticipants(false)} 
-          />
-        )}
+           <ParticipantsList
+             participants={meetingState.participants}
+             onClose={() => setShowParticipants(false)}
+           />
+         )}
       </div>
 
       {/* Control Bar */}
