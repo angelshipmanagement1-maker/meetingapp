@@ -22,10 +22,15 @@ export function VideoTile({ participant, isHost, isSpotlight = false }: VideoTil
 
   // Set video stream when available
   useEffect(() => {
+    console.log('VideoTile: Stream update for', participant.name, 'stream:', !!participant.stream, 'isLocal:', participant.isLocal);
     if (videoRef.current && participant.stream) {
+      console.log('VideoTile: Setting srcObject for', participant.name);
       videoRef.current.srcObject = participant.stream;
+    } else if (videoRef.current && !participant.stream) {
+      console.log('VideoTile: Clearing srcObject for', participant.name);
+      videoRef.current.srcObject = null;
     }
-  }, [participant.stream]);
+  }, [participant.stream, participant.name, participant.isLocal]);
 
   // Generate unique gradient for each participant
   const gradients = [

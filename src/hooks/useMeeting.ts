@@ -327,7 +327,7 @@ export function useMeeting() {
     };
 
     const handleParticipantJoined = async (participant: Record<string, unknown>) => {
-      console.log('Participant joined:', participant);
+      console.log('🎉 Participant joined event received:', participant);
       const p = participant as unknown as SocketParticipant;
       const newParticipant: Participant = {
         id: p.id,
@@ -337,18 +337,22 @@ export function useMeeting() {
         isVideoOff: p.isVideoOff || false,
       };
 
+      console.log('Adding participant to WebRTC service:', newParticipant.id);
       webrtcService.addParticipant(newParticipant);
       try {
         // Create bidirectional connection to new participant
+        console.log('🔗 Creating peer connection to new participant:', p.id);
         await webrtcService.createPeer(p.id, true);
+        console.log('✅ Peer connection created successfully to:', p.id);
       } catch (error) {
-        console.error('Failed to create peer:', error);
+        console.error('❌ Failed to create peer connection to new participant:', p.id, error);
       }
 
       setMeetingState(prev => ({
         ...prev,
         participants: [...prev.participants.filter(p => p.id !== newParticipant.id), newParticipant],
       }));
+      console.log('👥 Participant list updated with new participant');
     };
 
     const handleParticipantsUpdated = (data: { participants: SocketParticipant[] }) => {
