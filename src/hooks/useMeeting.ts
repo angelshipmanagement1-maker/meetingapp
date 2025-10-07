@@ -295,9 +295,8 @@ export function useMeeting() {
         if (!p.isLocal) {
           webrtcService.addParticipant(p);
           try {
-            // Only initiate if our ID is lexicographically smaller to avoid both sides initiating
-            const shouldInitiate = data.participantId < p.id;
-            await webrtcService.createPeer(p.id, shouldInitiate);
+            // Create bidirectional connections - always initiate to ensure mesh network
+            await webrtcService.createPeer(p.id, true);
           } catch (error) {
             console.error('Failed to create peer for existing participant:', p.id, error);
           }
@@ -340,9 +339,8 @@ export function useMeeting() {
 
       webrtcService.addParticipant(newParticipant);
       try {
-        // Only initiate if our ID is lexicographically smaller to avoid both sides initiating
-        const shouldInitiate = meetingState.participantId! < p.id;
-        await webrtcService.createPeer(p.id, shouldInitiate);
+        // Create bidirectional connection to new participant
+        await webrtcService.createPeer(p.id, true);
       } catch (error) {
         console.error('Failed to create peer:', error);
       }

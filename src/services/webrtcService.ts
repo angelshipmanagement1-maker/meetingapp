@@ -45,6 +45,14 @@ class WebRTCService {
   }
 
   async createPeer(participantId: string, initiator: boolean): Promise<SimplePeer.Instance> {
+    // Check if peer already exists
+    const existingPeer = this.peers.get(participantId);
+    if (existingPeer && !existingPeer.destroyed) {
+      console.log('Peer already exists for participant:', participantId);
+      return existingPeer;
+    }
+
+    console.log('Creating peer for participant:', participantId, 'initiator:', initiator);
     const peer = new SimplePeer({
       initiator,
       trickle: true,
@@ -107,10 +115,17 @@ class WebRTCService {
 
   async handleOffer(from: string, offer: RTCSessionDescriptionInit) {
     let peer = this.peers.get(from);
-    if (!peer) {
+    if (!peer || peer.destroyed) {
+      console.log('Creating peer for incoming offer from:', from);
       peer = await this.createPeer(from, false);
+    } else {
+      console.log('Using existing peer for offer from:', from);
     }
-    peer.signal(offer);
+    try {
+      peer.signal(offer);
+    } catch (error) {
+      console.error('Error signaling offer from', from, ':', error);
+    }
   }
 
   handleAnswer(from: string, answer: RTCSessionDescriptionInit) {
