@@ -18,7 +18,6 @@
   "env": {
     "VITE_APP_ENV": "production"
   },
-  "functions": {},
   "regions": ["fra1"],
   "headers": [
     {
