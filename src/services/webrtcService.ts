@@ -52,7 +52,7 @@ class WebRTCService {
       return existingPeer;
     }
 
-    console.log('Creating peer for participant:', participantId, 'initiator:', initiator);
+    console.log('Creating peer for participant:', participantId, 'initiator:', initiator, 'localStream:', !!this.localStream);
     const peer = new SimplePeer({
       initiator,
       trickle: true,
@@ -86,12 +86,14 @@ class WebRTCService {
     });
 
     peer.on('stream', (stream) => {
-      console.log('Received stream from:', participantId);
+      console.log('Received stream from:', participantId, 'tracks:', stream.getTracks().map(t => `${t.kind}: ${t.readyState}`));
       const participant = this.participants.get(participantId);
       if (participant) {
         participant.stream = stream;
         this.participants.set(participantId, participant);
         this.onParticipantStreamUpdate?.(participantId, stream);
+      } else {
+        console.warn('Received stream for unknown participant:', participantId);
       }
     });
 

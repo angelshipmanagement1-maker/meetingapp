@@ -395,6 +395,7 @@ export function useMeeting() {
 
     const handleWebRTCOffer = async (data: { from: string; to: string; offer: RTCSessionDescriptionInit }) => {
       if (data.to === meetingState.participantId) {
+        console.log('Received WebRTC offer from:', data.from);
         await webrtcService.handleOffer(data.from, data.offer);
       }
     };
@@ -466,6 +467,7 @@ export function useMeeting() {
   // WebRTC stream update handler
   useEffect(() => {
     webrtcService.onParticipantStreamUpdate = (participantId: string, stream: MediaStream) => {
+      console.log('Received stream update for participant:', participantId, 'stream tracks:', stream.getTracks().length);
       setMeetingState(prev => ({
         ...prev,
         participants: prev.participants.map(p =>
