@@ -1,0 +1,8 @@
+version: "2"
+authtoken: 3107Zr3RbFPEakhrH6zI15nYTqX_7K9xp1VF5dEFJgHjbbThq
+tunnels:
+  frontend:
+    addr: 8080
+    proto: http
+    schemes:
+      - https

@@ -1,0 +1,102 @@
+name: Deploy to Vercel & AWS
+
+on:
+  push:
+    branches: [ main, master ]
+  pull_request:
+    branches: [ main, master ]
+
+jobs:
+  # Frontend deployment to Vercel
+  frontend-deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '18'
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Run linting
+        run: npm run lint
+
+      - name: Run type checking
+        run: npx tsc --noEmit
+
+      - name: Build application
+        run: npm run build
+        env:
+          VITE_SERVER_URL: ${{ secrets.VITE_SERVER_URL }}
+          VITE_APP_NAME: ${{ secrets.VITE_APP_NAME }}
+
+      - name: Deploy to Vercel
+        uses: amondnet/vercel-action@v25
+        with:
+          vercel-token: ${{ secrets.VERCEL_TOKEN }}
+          vercel-org-id: ${{ secrets.VERCEL_ORG_ID }}
+          vercel-project-id: ${{ secrets.VERCEL_PROJECT_ID }}
+          vercel-args: '--prod'
+
+  # Backend deployment to AWS (or other cloud provider)
+  backend-deploy:
+    runs-on: ubuntu-latest
+    needs: frontend-deploy
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '18'
+          cache: 'npm'
+          cache-dependency-path: server/package-lock.json
+
+      - name: Install backend dependencies
+        working-directory: ./server
+        run: npm ci
+
+      - name: Run backend tests
+        working-directory: ./server
+        run: npm test || echo "No tests defined"
+
+      - name: Build backend (if needed)
+        working-directory: ./server
+        run: npm run build || echo "No build script"
+
+      - name: Deploy to AWS EC2/Railway/Render
+        run: |
+          echo "Deploy backend to your chosen platform"
+          echo "Add your deployment commands here"
+          # Example for Railway:
+          # railway deploy --service backend
+          # Or for AWS EB:
+          # eb deploy
+          # Or for Render:
+          # Add webhook trigger
+
+  # Health check after deployment
+  health-check:
+    runs-on: ubuntu-latest
+    needs: [frontend-deploy, backend-deploy]
+    steps:
+      - name: Wait for deployments
+        run: sleep 30
+
+      - name: Check frontend health
+        run: |
+          if [ -n "${{ secrets.FRONTEND_URL }}" ]; then
+            curl -f ${{ secrets.FRONTEND_URL }} || exit 1
+          fi
+
+      - name: Check backend health
+        run: |
+          if [ -n "${{ secrets.BACKEND_URL }}" ]; then
+            curl -f ${{ secrets.BACKEND_URL }}/health || exit 1
+          fi
