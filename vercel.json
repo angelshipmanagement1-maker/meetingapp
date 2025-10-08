@@ -17,6 +17,10 @@
       "destination": "/api/meetings"
     },
     {
+      "source": "/api/realtime/(.*)",
+      "destination": "/api/realtime"
+    },
+    {
       "source": "/health",
       "destination": "/api/health"
     }

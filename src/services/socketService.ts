@@ -1,4 +1,5 @@
 import { io, Socket } from 'socket.io-client';
+import { pollingService } from './pollingService';
 
 export interface SocketEvents {
   'meeting:join': (data: { meetingId: string; displayName: string; isHost: boolean; participantId: string }) => void;
@@ -30,6 +31,7 @@ class SocketService {
   private serverUrl = this.getServerUrl();
   private connectionAttempts = 0;
   private maxRetries = 5;
+  private usePolling = false;
 
   private getServerUrl(): string {
     const envUrl = import.meta.env.VITE_SERVER_URL;
@@ -77,7 +79,10 @@ class SocketService {
         this.connectionAttempts++;
         
         if (this.connectionAttempts >= this.maxRetries) {
-          reject(new Error(`Failed to connect to server after ${this.maxRetries} attempts. Please check if the backend server is running on ${this.serverUrl}`));
+          console.log('Socket.IO failed, switching to polling mode');
+          this.usePolling = true;
+          this.socket = null;
+          resolve(this.socket as any); // Return mock socket for polling mode
         } else {
           console.log(`Retrying connection (${this.connectionAttempts}/${this.maxRetries})...`);
           setTimeout(() => {
@@ -101,12 +106,52 @@ class SocketService {
   }
 
   emit<K extends keyof SocketEvents>(event: K, data: Parameters<SocketEvents[K]>[0]) {
+    if (this.usePolling) {
+      this.handlePollingEmit(event, data);
+      return;
+    }
+    
     if (this.socket?.connected) {
       console.log('Emitting socket event:', event, data);
       this.socket.emit(event, data);
     } else {
       console.warn('Socket not connected, cannot emit:', event);
       throw new Error('Socket not connected. Please try reconnecting.');
+    }
+  }
+
+  private async handlePollingEmit(event: string, data: any) {
+    try {
+      switch (event) {
+        case 'meeting:join':
+          await pollingService.joinMeeting(data);
+          break;
+        case 'chat:message':
+          await pollingService.sendChatMessage(data.text);
+          break;
+        case 'webrtc:offer':
+          await pollingService.sendOffer(data.to, data.offer);
+          break;
+        case 'webrtc:answer':
+          await pollingService.sendAnswer(data.to, data.answer);
+          break;
+        case 'webrtc:ice-candidate':
+          await pollingService.sendIceCandidate(data.to, data.candidate);
+          break;
+        case 'meeting:reaction':
+          await pollingService.sendReaction(data.emoji);
+          break;
+        case 'meeting:hand-raise':
+          await pollingService.sendHandRaise(data.isRaised);
+          break;
+        case 'participant:update':
+          await pollingService.updateParticipant(data);
+          break;
+        default:
+          console.log('Polling emit:', event, data);
+      }
+    } catch (error) {
+      console.error('Polling emit error:', error);
     }
   }
 
@@ -120,7 +165,9 @@ class SocketService {
   }
 
   on<K extends keyof SocketEvents>(event: K, callback: SocketEvents[K]) {
-    if (this.socket) {
+    if (this.usePolling) {
+      pollingService.on(event as string, callback);
+    } else if (this.socket) {
       this.socket.on(event as string, callback);
     }
   }
@@ -132,22 +179,26 @@ class SocketService {
   }
 
   disconnect() {
-    if (this.socket) {
+    if (this.usePolling) {
+      pollingService.disconnect();
+    } else if (this.socket) {
       this.socket.disconnect();
       this.socket = null;
     }
   }
 
   get connected() {
-    return this.socket?.connected || false;
+    return this.usePolling ? pollingService.connected : (this.socket?.connected || false);
   }
 
   reset() {
     this.connectionAttempts = 0;
+    this.usePolling = false;
     if (this.socket) {
       this.socket.disconnect();
       this.socket = null;
     }
+    pollingService.disconnect();
   }
 
   endMeeting() {
