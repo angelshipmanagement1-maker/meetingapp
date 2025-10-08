@@ -5,6 +5,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card } from "@/components/ui/card";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Settings } from "lucide-react";
 import { Loading } from "@/components/ui/loading";
 import { STORAGE_KEYS } from "@/utils/constants";
@@ -23,6 +24,7 @@ export default function PreJoin() {
   const [selectedCamera, setSelectedCamera] = useState("default");
   const [selectedMic, setSelectedMic] = useState("default");
   const [isJoining, setIsJoining] = useState(false);
+  const [showNameDialog, setShowNameDialog] = useState(!isHost);
 
   useEffect(() => {
     if (!meetingId) {
@@ -36,25 +38,22 @@ export default function PreJoin() {
   }, [meetingId]);
 
   const handleJoin = async () => {
-    if (!displayName.trim()) {
-      toast.error("Please enter your name");
-      return;
-    }
+    const finalName = displayName.trim() || "Anonymous";
 
     setIsJoining(true);
-    
+
     try {
       // Store settings in sessionStorage for the meeting room
-      sessionStorage.setItem(STORAGE_KEYS.DISPLAY_NAME, displayName);
+      sessionStorage.setItem(STORAGE_KEYS.DISPLAY_NAME, finalName);
       sessionStorage.setItem(STORAGE_KEYS.INITIAL_MUTE, String(isMuted));
       sessionStorage.setItem(STORAGE_KEYS.INITIAL_VIDEO_OFF, String(isVideoOff));
-      
+
       console.log('PreJoin: Starting join process...');
       toast.info('Connecting to meeting...');
-      
+
       // Add a small delay to show the loading state
       await new Promise(resolve => setTimeout(resolve, 500));
-      
+
       console.log('PreJoin: Navigating to meeting room...');
       navigate(`/meeting?mid=${meetingId}&host=${isHost}`);
     } catch (error) {
@@ -128,17 +127,60 @@ export default function PreJoin() {
             </div>
 
             <div className="space-y-4">
-              <div className="space-y-2">
-                <Label htmlFor="name">Your Name</Label>
-                <Input
-                  id="name"
-                  placeholder="Enter your name"
-                  value={displayName}
-                  onChange={(e) => setDisplayName(e.target.value)}
-                  onKeyPress={(e) => e.key === "Enter" && handleJoin()}
-                  className="glass-strong transition-smooth focus:glow"
-                  autoFocus
-                />
+              <div className="text-center">
+                <p className="text-sm text-muted-foreground mb-2">
+                  Joining as <span className="font-medium text-foreground">{displayName.trim() || "Anonymous"}</span>
+                </p>
+                <Dialog open={showNameDialog} onOpenChange={setShowNameDialog}>
+                  <DialogTrigger asChild>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      className="glass-strong transition-smooth hover:glow"
+                    >
+                      {displayName.trim() ? "Change Name" : "Enter Your Name"}
+                    </Button>
+                  </DialogTrigger>
+                  <DialogContent className="glass-strong border-border">
+                    <DialogHeader>
+                      <DialogTitle>Enter Your Name</DialogTitle>
+                    </DialogHeader>
+                    <div className="space-y-4">
+                      <div className="space-y-2">
+                        <Label htmlFor="name">Your Name</Label>
+                        <Input
+                          id="name"
+                          placeholder="Enter your name"
+                          value={displayName}
+                          onChange={(e) => setDisplayName(e.target.value)}
+                          onKeyPress={(e) => e.key === "Enter" && (setShowNameDialog(false), handleJoin())}
+                          className="glass-strong transition-smooth focus:glow"
+                          autoFocus
+                        />
+                      </div>
+                      <div className="flex gap-2">
+                        <Button
+                          onClick={() => setShowNameDialog(false)}
+                          variant="outline"
+                          className="flex-1"
+                        >
+                          Join as Anonymous
+                        </Button>
+                        <Button
+                          onClick={() => {
+                            setShowNameDialog(false);
+                            handleJoin();
+                          }}
+                          variant="hero"
+                          className="flex-1"
+                          disabled={!displayName.trim()}
+                        >
+                          Join with Name
+                        </Button>
+                      </div>
+                    </div>
+                  </DialogContent>
+                </Dialog>
               </div>
 
               <Button

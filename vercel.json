@@ -13,7 +13,7 @@
   ],
   "env": {
     "VITE_APP_ENV": "production",
-    "VITE_SERVER_URL": "https://your-vercel-backend.vercel.app",
+    "VITE_SERVER_URL": "https://your-railway-backend.up.railway.app",
     "VITE_APP_NAME": "MeetTime"
   },
   "regions": ["fra1"],

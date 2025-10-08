@@ -279,6 +279,64 @@ FRONTEND_URL=https://your-frontend.vercel.app
 - `VITE_SERVER_URL`: `https://api.meetingapp.org` (your backend URL)
 - `VITE_APP_NAME`: `MeetTime` (your app name)
 
+### Why Vercel Isn't Creating Deployments
+
+Vercel only creates deployments when:
+1. **Repository is connected** to Vercel
+2. **GitHub integration is enabled**
+3. **Branch is configured** for auto-deployment (usually `main`)
+
+### How to Connect Repository to Vercel
+
+#### Step 1: Import Project
+1. Go to [Vercel Dashboard](https://vercel.com/dashboard)
+2. Click "Add New..." → "Project"
+3. Click "Import Git Repository"
+4. Search for: `angelshipmanagement1-maker/meetingapp`
+5. Click "Import"
+
+#### Step 2: Configure Project
+1. **Framework Preset**: Vite (should auto-detect)
+2. **Root Directory**: `./` (leave default)
+3. **Build Command**: `npm run build` (auto-detected)
+4. **Output Directory**: `dist` (auto-detected)
+
+#### Step 3: Environment Variables
+Add these in Vercel project settings:
+```
+VITE_SERVER_URL=https://api.meetingapp.org
+VITE_APP_NAME=MeetTime
+```
+
+#### Step 4: Deploy
+1. Click "Deploy"
+2. Vercel will build and deploy your app
+3. Get the deployment URL (e.g., `meetingapp.vercel.app`)
+
+#### Step 5: Enable Auto-Deployment
+1. Go to Project Settings → Git
+2. Ensure "main" branch is selected for production
+3. Enable "Auto-assign custom domains" if needed
+
+### Troubleshooting Vercel Deployments
+
+#### Issue: "No deployments found"
+- **Solution**: Repository not connected. Follow steps above.
+
+#### Issue: "Build failed"
+- **Check**: Vercel build logs for errors
+- **Verify**: `vercel.json` configuration
+- **Check**: Node.js version compatibility
+
+#### Issue: "Domain not verified"
+- **Solution**: Update DNS records as specified above
+- **Wait**: DNS propagation can take 24-48 hours
+
+#### Issue: "Environment variables not working"
+- **Check**: Variables are set in Vercel project settings
+- **Verify**: Variable names match exactly
+- **Restart**: Redeploy after adding variables
+
 ### Backend Domain
 
 Update your backend deployment's domain in:
