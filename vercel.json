@@ -7,7 +7,7 @@
   "devCommand": "npm run dev",
   "functions": {
     "api/**/*.js": {
-      "runtime": "@vercel/node"
+      "runtime": "nodejs18.x"
     }
   },
   "rewrites": [
