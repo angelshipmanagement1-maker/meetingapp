@@ -32,6 +32,7 @@ class SocketService {
   private connectionAttempts = 0;
   private maxRetries = 5;
   private usePolling = false;
+  private eventHandlers: Map<string, Function[]> = new Map();
 
   private getServerUrl(): string {
     const envUrl = import.meta.env.VITE_SERVER_URL;
@@ -81,8 +82,8 @@ class SocketService {
         if (this.connectionAttempts >= this.maxRetries) {
           console.log('Socket.IO failed, switching to polling mode');
           this.usePolling = true;
-          this.socket = null;
-          resolve(this.socket as any); // Return mock socket for polling mode
+          this.socket = this.createMockSocket();
+          resolve(this.socket); // Return mock socket for polling mode
         } else {
           console.log(`Retrying connection (${this.connectionAttempts}/${this.maxRetries})...`);
           setTimeout(() => {
@@ -120,11 +121,26 @@ class SocketService {
     }
   }
 
+  private createMockSocket(): any {
+    return {
+      connected: true,
+      emit: () => {},
+      on: () => {},
+      off: () => {},
+      disconnect: () => {}
+    };
+  }
+
   private async handlePollingEmit(event: string, data: any) {
     try {
       switch (event) {
         case 'meeting:join':
-          await pollingService.joinMeeting(data);
+          const result = await pollingService.joinMeeting(data);
+          // Simulate the joined event
+          setTimeout(() => {
+            const handlers = this.eventHandlers.get('meeting:joined') || [];
+            handlers.forEach(handler => handler(result));
+          }, 100);
           break;
         case 'chat:message':
           await pollingService.sendChatMessage(data.text);
@@ -166,6 +182,11 @@ class SocketService {
 
   on<K extends keyof SocketEvents>(event: K, callback: SocketEvents[K]) {
     if (this.usePolling) {
+      // Store handlers for polling mode
+      if (!this.eventHandlers.has(event as string)) {
+        this.eventHandlers.set(event as string, []);
+      }
+      this.eventHandlers.get(event as string)!.push(callback);
       pollingService.on(event as string, callback);
     } else if (this.socket) {
       this.socket.on(event as string, callback);

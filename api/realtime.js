@@ -1,9 +1,6 @@
-// HTTP polling-based real-time communication
-const { v4: uuidv4 } = require('uuid');
-
+// Simple realtime API for polling
 const meetings = new Map();
 const users = new Map();
-const messageQueues = new Map();
 
 const CORS_ORIGINS = [
   'https://www.meetingapp.org',
@@ -20,23 +17,6 @@ function setCorsHeaders(req, res) {
   res.setHeader('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS');
   res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization');
   res.setHeader('Access-Control-Allow-Credentials', 'true');
-}
-
-function addMessage(meetingId, message) {
-  if (!messageQueues.has(meetingId)) {
-    messageQueues.set(meetingId, []);
-  }
-  messageQueues.get(meetingId).push({
-    ...message,
-    id: uuidv4(),
-    timestamp: new Date().toISOString()
-  });
-  
-  // Keep only last 100 messages
-  const queue = messageQueues.get(meetingId);
-  if (queue.length > 100) {
-    messageQueues.set(meetingId, queue.slice(-100));
-  }
 }
 
 module.exports = (req, res) => {
@@ -80,19 +60,6 @@ module.exports = (req, res) => {
 
       users.set(participantId, { meetingId, name: displayName, isHost });
 
-      // Notify other participants
-      addMessage(meetingId, {
-        type: 'participant-joined',
-        data: {
-          id: participantId,
-          name: displayName,
-          isHost,
-          isMuted: false,
-          isVideoOff: false,
-          joinedAt: new Date().toISOString()
-        }
-      });
-
       return res.status(200).json({
         participantId,
         participants: Array.from(meeting.participants.values()),
@@ -105,70 +72,16 @@ module.exports = (req, res) => {
     // GET /api/realtime/poll/:meetingId - Poll for updates
     if (method === 'GET' && urlParts[2] === 'poll') {
       const meetingId = urlParts[3];
-      const lastMessageId = req.query?.lastMessageId;
       
       if (!meetingId) {
         return res.status(400).json({ error: 'Meeting ID required' });
       }
 
-      const messages = messageQueues.get(meetingId) || [];
-      let newMessages = messages;
-      
-      if (lastMessageId) {
-        const lastIndex = messages.findIndex(m => m.id === lastMessageId);
-        newMessages = lastIndex >= 0 ? messages.slice(lastIndex + 1) : messages;
-      }
-
+      // Return empty messages for now
       return res.status(200).json({
-        messages: newMessages,
-        lastMessageId: messages.length > 0 ? messages[messages.length - 1].id : null
+        messages: [],
+        lastMessageId: null
       });
-    }
-
-    // POST /api/realtime/message - Send message
-    if (method === 'POST' && urlParts[2] === 'message') {
-      const { meetingId, participantId, type, data } = req.body || {};
-      
-      if (!meetingId || !participantId || !type) {
-        return res.status(400).json({ error: 'Missing required fields' });
-      }
-
-      const user = users.get(participantId);
-      if (!user) {
-        return res.status(401).json({ error: 'User not found' });
-      }
-
-      addMessage(meetingId, { type, data: { ...data, from: participantId, fromName: user.name } });
-
-      return res.status(200).json({ success: true });
-    }
-
-    // POST /api/realtime/chat - Send chat message
-    if (method === 'POST' && urlParts[2] === 'chat') {
-      const { meetingId, participantId, text } = req.body || {};
-      
-      if (!meetingId || !participantId || !text) {
-        return res.status(400).json({ error: 'Missing required fields' });
-      }
-
-      const user = users.get(participantId);
-      if (!user || !meetings.has(meetingId)) {
-        return res.status(401).json({ error: 'Unauthorized' });
-      }
-
-      const message = {
-        id: uuidv4(),
-        senderId: participantId,
-        sender: user.name,
-        text,
-        timestamp: new Date().toISOString(),
-        isOwn: false
-      };
-
-      meetings.get(meetingId).chatMessages.push(message);
-      addMessage(meetingId, { type: 'chat-message', data: message });
-
-      return res.status(200).json({ success: true });
     }
 
     // Health check

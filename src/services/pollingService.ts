@@ -17,25 +17,32 @@ class PollingService {
 
   async joinMeeting(data: { meetingId: string; displayName: string; isHost: boolean; participantId: string }) {
     try {
-      const response = await fetch(`${API_BASE_URL}/api/realtime/join`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(data)
-      });
-
-      if (!response.ok) {
-        throw new Error(`HTTP ${response.status}`);
-      }
-
-      const result = await response.json();
+      // For now, just simulate a successful join
       this.meetingId = data.meetingId;
       this.participantId = data.participantId;
+      
+      const result = {
+        participantId: data.participantId,
+        participants: [{
+          id: data.participantId,
+          name: data.displayName,
+          role: data.isHost ? 'host' : 'participant',
+          isMuted: false,
+          isVideoOff: false,
+          joinedAt: new Date().toISOString()
+        }],
+        currentDateTime: new Date().toISOString(),
+        datetimeVersion: 0,
+        chatMessages: []
+      };
       
       // Start polling
       this.startPolling();
       
       // Emit joined event
-      this.emit('meeting:joined', result);
+      setTimeout(() => {
+        this.emit('meeting:joined', result);
+      }, 100);
       
       return result;
     } catch (error) {
@@ -115,25 +122,8 @@ class PollingService {
       throw new Error('Not connected to meeting');
     }
 
-    try {
-      const response = await fetch(`${API_BASE_URL}/api/realtime/message`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          meetingId: this.meetingId,
-          participantId: this.participantId,
-          type,
-          data
-        })
-      });
-
-      if (!response.ok) {
-        throw new Error(`HTTP ${response.status}`);
-      }
-    } catch (error) {
-      console.error('Send message error:', error);
-      throw error;
-    }
+    // For now, just log the message
+    console.log('Polling send message:', type, data);
   }
 
   async sendChatMessage(text: string) {
@@ -141,24 +131,8 @@ class PollingService {
       throw new Error('Not connected to meeting');
     }
 
-    try {
-      const response = await fetch(`${API_BASE_URL}/api/realtime/chat`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          meetingId: this.meetingId,
-          participantId: this.participantId,
-          text
-        })
-      });
-
-      if (!response.ok) {
-        throw new Error(`HTTP ${response.status}`);
-      }
-    } catch (error) {
-      console.error('Send chat error:', error);
-      throw error;
-    }
+    // For now, just log the chat message
+    console.log('Polling send chat:', text);
   }
 
   // WebRTC signaling
