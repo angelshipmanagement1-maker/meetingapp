@@ -1,198 +1,33 @@
-name: Deploy to Vercel (Frontend & Backend)
+name: CI/CD Pipeline
 
 on:
-  push:
-    branches: [ main, master ]
-  pull_request:
-    branches: [ main, master ]
+   push:
+     branches: [ main, master ]
+   pull_request:
+     branches: [ main, master ]
 
 jobs:
-  # Frontend build and test
-  frontend-test:
-    runs-on: ubuntu-latest
-    steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
+   # Build and test
+   test:
+     runs-on: ubuntu-latest
+     steps:
+       - name: Checkout code
+         uses: actions/checkout@v4
 
-      - name: Setup Node.js
-        uses: actions/setup-node@v4
-        with:
-          node-version: '18'
-          cache: 'npm'
+       - name: Setup Node.js
+         uses: actions/setup-node@v4
+         with:
+           node-version: '18'
+           cache: 'npm'
 
-      - name: Install dependencies
-        run: npm ci
+       - name: Install dependencies
+         run: npm ci
 
-      - name: Run linting
-        run: npm run lint
+       - name: Run linting
+         run: npm run lint
 
-      - name: Run type checking
-        run: npx tsc --noEmit
+       - name: Run type checking
+         run: npx tsc --noEmit
 
-      - name: Set build environment
-        run: |
-          if [ -n "${{ secrets.VITE_SERVER_URL }}" ]; then
-            echo "VITE_SERVER_URL=${{ secrets.VITE_SERVER_URL }}" >> $GITHUB_ENV
-          else
-            echo "VITE_SERVER_URL=http://localhost:3001" >> $GITHUB_ENV
-          fi
-          if [ -n "${{ secrets.VITE_APP_NAME }}" ]; then
-            echo "VITE_APP_NAME=${{ secrets.VITE_APP_NAME }}" >> $GITHUB_ENV
-          else
-            echo "VITE_APP_NAME=MeetTime" >> $GITHUB_ENV
-          fi
-
-      - name: Build application
-        run: npm run build
-
-  # Frontend deployment to Vercel (optional - only runs if secrets are configured)
-  frontend-deploy:
-    runs-on: ubuntu-latest
-    needs: frontend-test
-    if: github.event_name == 'push'
-    steps:
-      - name: Check Vercel secrets
-        id: check-secrets
-        run: |
-          if [ -z "$VERCEL_TOKEN" ] || [ -z "$VERCEL_ORG_ID" ] || [ -z "$VERCEL_PROJECT_ID" ]; then
-            echo "Vercel secrets not configured. Skipping deployment."
-            echo "skip=true" >> $GITHUB_OUTPUT
-          else
-            echo "Vercel secrets found. Proceeding with deployment."
-            echo "skip=false" >> $GITHUB_OUTPUT
-          fi
-        env:
-          VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
-          VERCEL_ORG_ID: ${{ secrets.VERCEL_ORG_ID }}
-          VERCEL_PROJECT_ID: ${{ secrets.VERCEL_PROJECT_ID }}
-
-      - name: Checkout code
-        if: steps.check-secrets.outputs.skip != 'true'
-        uses: actions/checkout@v4
-
-      - name: Setup Node.js
-        if: steps.check-secrets.outputs.skip != 'true'
-        uses: actions/setup-node@v4
-        with:
-          node-version: '18'
-          cache: 'npm'
-
-      - name: Install dependencies
-        if: steps.check-secrets.outputs.skip != 'true'
-        run: npm ci
-
-      - name: Build application
-        if: steps.check-secrets.outputs.skip != 'true'
-        run: npm run build
-        env:
-          VITE_SERVER_URL: ${{ secrets.VITE_SERVER_URL || 'http://localhost:3001' }}
-          VITE_APP_NAME: ${{ secrets.VITE_APP_NAME || 'MeetTime' }}
-
-      - name: Deploy to Vercel
-        if: steps.check-secrets.outputs.skip != 'true'
-        uses: amondnet/vercel-action@v25
-        with:
-          vercel-token: ${{ secrets.VERCEL_TOKEN }}
-          vercel-org-id: ${{ secrets.VERCEL_ORG_ID }}
-          vercel-project-id: ${{ secrets.VERCEL_PROJECT_ID }}
-          vercel-args: '--prod'
-
-  # Backend deployment to Vercel
-  backend-deploy:
-    runs-on: ubuntu-latest
-    needs: frontend-deploy
-    if: github.event_name == 'push'
-    steps:
-      - name: Check Vercel Backend secrets
-        id: check-backend-secrets
-        run: |
-          if [ -z "$VERCEL_TOKEN" ] || [ -z "$VERCEL_ORG_ID" ] || [ -z "$VERCEL_BACKEND_PROJECT_ID" ]; then
-            echo "Vercel backend secrets not configured. Skipping backend deployment."
-            echo "skip=true" >> $GITHUB_OUTPUT
-          else
-            echo "Vercel backend secrets found. Proceeding with backend deployment."
-            echo "skip=false" >> $GITHUB_OUTPUT
-          fi
-        env:
-          VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
-          VERCEL_ORG_ID: ${{ secrets.VERCEL_ORG_ID }}
-          VERCEL_BACKEND_PROJECT_ID: ${{ secrets.VERCEL_BACKEND_PROJECT_ID }}
-
-      - name: Checkout code
-        if: steps.check-backend-secrets.outputs.skip != 'true'
-        uses: actions/checkout@v4
-
-      - name: Setup Node.js
-        if: steps.check-backend-secrets.outputs.skip != 'true'
-        uses: actions/setup-node@v4
-        with:
-          node-version: '18'
-          cache: 'npm'
-          cache-dependency-path: server/package-lock.json
-
-      - name: Install backend dependencies
-        if: steps.check-backend-secrets.outputs.skip != 'true'
-        working-directory: ./server
-        run: npm ci
-
-      - name: Deploy Backend to Vercel
-        if: steps.check-backend-secrets.outputs.skip != 'true'
-        id: backend-deploy
-        uses: amondnet/vercel-action@v25
-        with:
-          vercel-token: ${{ secrets.VERCEL_TOKEN }}
-          vercel-org-id: ${{ secrets.VERCEL_ORG_ID }}
-          vercel-project-id: ${{ secrets.VERCEL_BACKEND_PROJECT_ID }}
-          working-directory: ./server
-          vercel-args: '--prod'
-
-      - name: Update Frontend Environment Variables
-        if: steps.check-backend-secrets.outputs.skip != 'true'
-        run: |
-          # Get the backend deployment URL
-          BACKEND_URL=$(echo "${{ steps.backend-deploy.outputs.preview-url }}" | sed 's|https://||')
-          if [ -z "$BACKEND_URL" ]; then
-            echo "Could not get backend URL, skipping env update"
-            exit 0
-          fi
-
-          # Update frontend environment variables
-          curl -X POST "https://api.vercel.com/v1/projects/${{ secrets.VERCEL_PROJECT_ID }}/env" \
-            -H "Authorization: Bearer ${{ secrets.VERCEL_TOKEN }}" \
-            -H "Content-Type: application/json" \
-            -d '{
-              "key": "VITE_SERVER_URL",
-              "value": "https://'$BACKEND_URL'",
-              "type": "plain",
-              "target": ["production"]
-            }'
-
-      - name: Redeploy Frontend with Updated Backend URL
-        if: steps.check-backend-secrets.outputs.skip != 'true'
-        uses: amondnet/vercel-action@v25
-        with:
-          vercel-token: ${{ secrets.VERCEL_TOKEN }}
-          vercel-org-id: ${{ secrets.VERCEL_ORG_ID }}
-          vercel-project-id: ${{ secrets.VERCEL_PROJECT_ID }}
-          vercel-args: '--prod'
-
-  # Health check after deployment
-  health-check:
-    runs-on: ubuntu-latest
-    needs: [frontend-deploy]
-    if: github.event_name == 'push'
-    steps:
-      - name: Wait for deployments
-        run: sleep 30
-
-      - name: Check frontend health
-        run: |
-          if [ -n "${{ secrets.FRONTEND_URL }}" ]; then
-            curl -f "${{ secrets.FRONTEND_URL }}" || exit 1
-          fi
-
-      - name: Check backend health
-        run: |
-          if [ -n "${{ secrets.BACKEND_URL }}" ]; then
-            curl -f "${{ secrets.BACKEND_URL }}/health" || exit 1
-          fi
+       - name: Build application
+         run: npm run build
