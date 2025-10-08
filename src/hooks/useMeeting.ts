@@ -275,7 +275,7 @@ export function useMeeting() {
     if (!socketService.connected) return;
 
     const handleMeetingJoined = async (data: { participantId: string; participants: Record<string, unknown>[]; currentDateTime: string; datetimeVersion: number; chatMessages: Record<string, unknown>[] }) => {
-      console.log('Meeting joined via socket:', data);
+      console.log('🎉 Meeting joined via socket:', data);
 
       // Cast participants to proper type
       const participants = data.participants as unknown as SocketParticipant[];
@@ -290,16 +290,23 @@ export function useMeeting() {
         stream: p.id === data.participantId ? localStream : undefined
       }));
 
+      console.log('📋 Server participants:', serverParticipants.map(p => `${p.name} (${p.id})`));
+
       // Add participants to WebRTC service and create peers for existing participants
       for (const p of serverParticipants) {
         if (!p.isLocal) {
+          console.log('🔗 Adding existing participant to WebRTC:', p.name, p.id);
           webrtcService.addParticipant(p);
           try {
             // Create bidirectional connections - always initiate to ensure mesh network
+            console.log('📡 Creating peer connection to existing participant:', p.id);
             await webrtcService.createPeer(p.id, true);
+            console.log('✅ Peer connection created to:', p.id);
           } catch (error) {
-            console.error('Failed to create peer for existing participant:', p.id, error);
+            console.error('❌ Failed to create peer for existing participant:', p.id, error);
           }
+        } else {
+          console.log('👤 Local participant (me):', p.name, p.id);
         }
       }
 
@@ -318,6 +325,7 @@ export function useMeeting() {
         chatMessages: initialMessages,
       }));
 
+      console.log('🎊 Meeting join process completed successfully!');
       toast.success('Successfully joined the meeting!');
     };
 
