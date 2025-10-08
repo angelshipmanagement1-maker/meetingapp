@@ -7,14 +7,13 @@
   "devCommand": "npm run dev",
   "functions": {
     "api/**/*.js": {
-      "runtime": "nodejs18.x",
-      "maxDuration": 30
+      "runtime": "@vercel/node"
     }
   },
   "rewrites": [
     {
       "source": "/socket.io/(.*)",
-      "destination": "/api/socket"
+      "destination": "/api/socket.io"
     },
     {
       "source": "/api/(.*)",
