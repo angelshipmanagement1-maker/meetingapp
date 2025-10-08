@@ -1,8 +1,18 @@
+const CORS_ORIGINS = [
+  'https://www.meetingapp.org',
+  'https://meetingapp.org',
+  'http://localhost:5173',
+  'http://localhost:8080'
+];
+
 module.exports = (req, res) => {
-  // Set CORS headers
-  res.setHeader('Access-Control-Allow-Origin', '*');
-  res.setHeader('Access-Control-Allow-Methods', 'GET, POST, OPTIONS');
+  const origin = req.headers.origin;
+  if (CORS_ORIGINS.includes(origin)) {
+    res.setHeader('Access-Control-Allow-Origin', origin);
+  }
+  res.setHeader('Access-Control-Allow-Methods', 'GET, OPTIONS');
   res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
+  res.setHeader('Access-Control-Allow-Credentials', 'true');
 
   if (req.method === 'OPTIONS') {
     res.status(200).end();
@@ -11,7 +21,7 @@ module.exports = (req, res) => {
 
   res.status(200).json({
     status: 'healthy',
-    message: 'MeetTime API is running',
+    message: 'API server running',
     timestamp: new Date().toISOString(),
     version: '1.0.0'
   });

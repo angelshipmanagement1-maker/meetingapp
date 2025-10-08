@@ -1,17 +1,24 @@
 {
-  "version": 2,
+  "functions": {
+    "api/socket.js": {
+      "maxDuration": 30
+    },
+    "api/meetings.js": {
+      "maxDuration": 10
+    }
+  },
   "rewrites": [
     {
       "source": "/socket.io/(.*)",
       "destination": "/api/socket"
     },
     {
-      "source": "/api/(.*)",
-      "destination": "/api/$1"
+      "source": "/api/meetings/(.*)",
+      "destination": "/api/meetings"
     },
     {
-      "source": "/(.*)",
-      "destination": "/index.html"
+      "source": "/health",
+      "destination": "/api/health"
     }
   ]
 }
