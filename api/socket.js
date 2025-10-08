@@ -6,9 +6,9 @@ let meetings = new Map();
 let connectedUsers = new Map();
 
 const allowedOrigins = [
-  'https://meetingapp-git-main-angelseafarerswebsite.vercel.app',
   'https://www.meetingapp.org',
-  'https://meetingapp-puce.vercel.app',
+  'https://meetingapp.org',
+  'https://meetingapp-git-main-angelseafarerswebsite.vercel.app',
   'http://localhost:5173',
   'http://localhost:3000',
   'http://localhost:8080'

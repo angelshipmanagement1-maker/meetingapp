@@ -13,7 +13,7 @@
   "rewrites": [
     {
       "source": "/socket.io/(.*)",
-      "destination": "/api/socket.io"
+      "destination": "/api/socket"
     },
     {
       "source": "/api/(.*)",
@@ -24,18 +24,7 @@
       "destination": "/index.html"
     }
   ],
-  "env": {
-    "VITE_APP_ENV": "production",
-    "VITE_SERVER_URL": "https://meetingapp-git-main-angelseafarerswebsite.vercel.app",
-    "VITE_APP_NAME": "MeetTime",
-    "CORS_ORIGINS": "https://meetingapp-git-main-angelseafarerswebsite.vercel.app,https://www.meetingapp.org,https://meetingapp-puce.vercel.app",
-    "RATE_LIMIT_WINDOW_MS": "900000",
-    "RATE_LIMIT_MAX_REQUESTS": "100",
-    "MAX_PARTICIPANTS_PER_MEETING": "50",
-    "MEETING_EXPIRY_HOURS": "24",
-    "TOKEN_EXPIRY_HOURS": "1",
-    "LOG_LEVEL": "info"
-  },
+
   "regions": ["fra1"],
   "headers": [
     {
