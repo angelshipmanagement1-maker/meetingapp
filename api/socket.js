@@ -101,6 +101,117 @@ module.exports = async (req, res) => {
           }
         });
 
+        // WebRTC signaling
+        socket.on('webrtc:offer', (data) => {
+          const userInfo = connectedUsers.get(socket.id);
+          if (userInfo) {
+            socket.to(userInfo.meetingId).emit('webrtc:offer', {
+              ...data,
+              from: userInfo.participantId
+            });
+          }
+        });
+
+        socket.on('webrtc:answer', (data) => {
+          const userInfo = connectedUsers.get(socket.id);
+          if (userInfo) {
+            socket.to(userInfo.meetingId).emit('webrtc:answer', {
+              ...data,
+              from: userInfo.participantId
+            });
+          }
+        });
+
+        socket.on('webrtc:ice-candidate', (data) => {
+          const userInfo = connectedUsers.get(socket.id);
+          if (userInfo) {
+            socket.to(userInfo.meetingId).emit('webrtc:ice-candidate', {
+              ...data,
+              from: userInfo.participantId
+            });
+          }
+        });
+
+        // Participant updates (mute/video)
+        socket.on('participant:update', (data) => {
+          const userInfo = connectedUsers.get(socket.id);
+          if (userInfo && meetings.has(userInfo.meetingId)) {
+            const meeting = meetings.get(userInfo.meetingId);
+            const participant = meeting.participants.get(userInfo.participantId);
+            if (participant) {
+              if (data.isMuted !== undefined) participant.isMuted = data.isMuted;
+              if (data.isVideoOff !== undefined) participant.isVideoOff = data.isVideoOff;
+
+              socket.to(userInfo.meetingId).emit('participant:updated', {
+                participantId: userInfo.participantId,
+                isMuted: participant.isMuted,
+                isVideoOff: participant.isVideoOff
+              });
+            }
+          }
+        });
+
+        // Chat messages
+        socket.on('chat:message', (data) => {
+          const userInfo = connectedUsers.get(socket.id);
+          if (userInfo && meetings.has(userInfo.meetingId)) {
+            const meeting = meetings.get(userInfo.meetingId);
+            const message = {
+              id: Date.now().toString(),
+              senderId: userInfo.participantId,
+              sender: userInfo.name,
+              text: data.text,
+              timestamp: new Date().toISOString(),
+              isOwn: false
+            };
+
+            meeting.chatMessages.push(message);
+            io.to(userInfo.meetingId).emit('chat:new-message', message);
+          }
+        });
+
+        // Reactions
+        socket.on('meeting:reaction', (data) => {
+          const userInfo = connectedUsers.get(socket.id);
+          if (userInfo) {
+            io.to(userInfo.meetingId).emit('meeting:reaction-received', {
+              participantId: userInfo.participantId,
+              participantName: userInfo.name,
+              emoji: data.emoji,
+              timestamp: new Date().toISOString()
+            });
+          }
+        });
+
+        // Hand raise
+        socket.on('meeting:hand-raise', (data) => {
+          const userInfo = connectedUsers.get(socket.id);
+          if (userInfo) {
+            socket.to(userInfo.meetingId).emit('meeting:hand-raise-updated', {
+              participantId: userInfo.participantId,
+              participantName: userInfo.name,
+              isRaised: data.isRaised
+            });
+          }
+        });
+
+        // DateTime updates
+        socket.on('meeting:datetime:update', (data) => {
+          const userInfo = connectedUsers.get(socket.id);
+          if (userInfo && userInfo.isHost && meetings.has(userInfo.meetingId)) {
+            const meeting = meetings.get(userInfo.meetingId);
+            meeting.currentDateTime = data.newDateTime;
+            meeting.datetimeVersion = data.version;
+
+            io.to(userInfo.meetingId).emit('meeting:datetime:changed', {
+              newDateTime: data.newDateTime,
+              version: data.version,
+              changedBy: userInfo.name,
+              changedAt: new Date().toISOString()
+            });
+          }
+        });
+
         socket.on('disconnect', () => {
           const userInfo = connectedUsers.get(socket.id);
           if (userInfo && meetings.has(userInfo.meetingId)) {
@@ -111,6 +222,16 @@ module.exports = async (req, res) => {
               participantId: userInfo.participantId,
               reason: 'disconnected'
             });
+
+            // Clean up empty meetings
+            if (meeting.participants.size === 0) {
+              setTimeout(() => {
+                if (meetings.has(userInfo.meetingId) && 
+                    meetings.get(userInfo.meetingId).participants.size === 0) {
+                  meetings.delete(userInfo.meetingId);
+                }
+              }, 300000);
+            }
           }
           connectedUsers.delete(socket.id);
         });
