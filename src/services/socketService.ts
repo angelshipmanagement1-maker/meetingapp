@@ -27,9 +27,26 @@ export interface SocketEvents {
 
 class SocketService {
   private socket: Socket | null = null;
-  private serverUrl = import.meta.env.VITE_SERVER_URL || window.location.origin;
+  private serverUrl = this.getServerUrl();
   private connectionAttempts = 0;
   private maxRetries = 5;
+
+  private getServerUrl(): string {
+    // Always use Vercel URL for production deployments
+    if (window.location.hostname.includes('vercel.app') ||
+        window.location.hostname.includes('meetingapp.org') ||
+        window.location.hostname.includes('localhost') === false) {
+      return window.location.origin;
+    }
+
+    // Use environment variable for local development
+    const envUrl = import.meta.env.VITE_SERVER_URL;
+    if (envUrl) {
+      return envUrl;
+    }
+
+    return 'http://localhost:3001';
+  }
 
   get socketInstance() {
     return this.socket;
@@ -45,6 +62,7 @@ class SocketService {
 
       console.log('Connecting to server:', this.serverUrl);
       this.socket = io(this.serverUrl, {
+        path: '/socket.io/',
         transports: ['polling', 'websocket'],
         timeout: 60000,
         forceNew: true,
@@ -52,7 +70,8 @@ class SocketService {
         autoConnect: true,
         reconnection: true,
         reconnectionAttempts: 10,
-        reconnectionDelay: 5000
+        reconnectionDelay: 5000,
+        withCredentials: true
       });
 
       this.socket.on('connect', () => {

@@ -6,16 +6,32 @@ let meetings = new Map();
 let connectedUsers = new Map();
 
 module.exports = (req, res) => {
+  // Set CORS headers for all requests
+  const allowedOrigins = [
+    'https://meetingapp-git-main-angelseafarerswebsite.vercel.app',
+    'https://www.meetingapp.org',
+    'https://meetingapp-puce.vercel.app',
+    'http://localhost:5173',
+    'http://localhost:3000',
+    'http://localhost:8080'
+  ];
+  
+  const origin = req.headers.origin;
+  if (allowedOrigins.includes(origin) || !origin) {
+    res.setHeader('Access-Control-Allow-Origin', origin || '*');
+  }
+  
+  res.setHeader('Access-Control-Allow-Methods', 'GET, POST, OPTIONS');
+  res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization');
+  res.setHeader('Access-Control-Allow-Credentials', 'true');
+
   // Handle CORS preflight
   if (req.method === 'OPTIONS') {
-    res.setHeader('Access-Control-Allow-Origin', '*');
-    res.setHeader('Access-Control-Allow-Methods', 'GET, POST, OPTIONS');
-    res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
     res.status(200).end();
     return;
   }
 
-  if (req.method !== 'GET') {
+  if (req.method !== 'GET' && req.method !== 'POST') {
     res.status(405).json({ error: 'Method not allowed' });
     return;
   }
@@ -38,9 +54,9 @@ module.exports = (req, res) => {
       on: () => {}, // No-op
     };
 
-    io = new Server(httpServer, {
+    io = new Server({
       cors: {
-        origin: process.env.CORS_ORIGINS ? process.env.CORS_ORIGINS.split(',') : ["*"],
+        origin: allowedOrigins,
         methods: ["GET", "POST"],
         credentials: true
       },
@@ -48,6 +64,7 @@ module.exports = (req, res) => {
       allowEIO3: true,
       pingTimeout: 60000,
       pingInterval: 25000,
+      path: '/socket.io/'
     });
 
     console.log('✅ [MeetTime Backend] Socket.IO server initialized successfully');
@@ -287,12 +304,17 @@ module.exports = (req, res) => {
   }
 
   // Handle Socket.IO requests
-  if (req.headers.upgrade === 'websocket') {
-    // WebSocket upgrade - let Socket.IO handle it
-    return;
+  try {
+    if (req.url && req.url.includes('/socket.io/')) {
+      // Let Socket.IO handle the request
+      io.engine.handleRequest(req, res);
+      return;
+    }
+  } catch (error) {
+    console.error('Socket.IO request handling error:', error);
   }
 
-  // Handle polling requests
+  // Handle health check and status requests
   console.log('🌐 [MeetTime Backend] API endpoint called - Socket.IO server status check');
   console.log('📊 [MeetTime Backend] Current stats:', {
     connectedClients: io ? io.sockets.sockets.size : 0,
@@ -300,9 +322,6 @@ module.exports = (req, res) => {
     totalUsers: connectedUsers.size
   });
 
-  res.setHeader('Access-Control-Allow-Origin', '*');
-  res.setHeader('Access-Control-Allow-Methods', 'GET, POST, OPTIONS');
-  res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
   res.status(200).json({
     message: 'MeetTime Socket.IO server running successfully',
     status: 'healthy',

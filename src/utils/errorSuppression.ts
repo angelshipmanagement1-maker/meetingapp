@@ -6,13 +6,16 @@ export const suppressKnownErrors = () => {
   console.error = (...args) => {
     const message = args.join(' ');
     
-    // Suppress browser extension and media autoplay errors
+    // Suppress browser extension, media autoplay, and connection errors
     if (
       message.includes('Could not establish connection. Receiving end does not exist') ||
       message.includes('Extension context invalidated') ||
       message.includes('content-all.js') ||
       message.includes('The play() request was interrupted') ||
-      message.includes('AbortError')
+      message.includes('AbortError') ||
+      message.includes('TransportError: xhr poll error') ||
+      message.includes('Socket not connected') ||
+      message.includes('Failed to connect to server')
     ) {
       return;
     }
@@ -26,7 +29,8 @@ export const suppressKnownErrors = () => {
     // Suppress React DevTools warning and util externalization warnings
     if (
       message.includes('Download the React DevTools') ||
-      message.includes('Module "util" has been externalized')
+      message.includes('Module "util" has been externalized') ||
+      message.includes('Socket not connected, cannot emit')
     ) {
       return;
     }

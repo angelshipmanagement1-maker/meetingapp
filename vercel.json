@@ -17,6 +17,10 @@
       "destination": "/api/socket.io"
     },
     {
+      "source": "/api/socket.io",
+      "destination": "/api/socket.io"
+    },
+    {
       "source": "/api/(.*)",
       "destination": "/api/$1"
     },
@@ -27,7 +31,7 @@
   ],
   "env": {
     "VITE_APP_ENV": "production",
-    "VITE_SERVER_URL": "",
+    "VITE_SERVER_URL": "https://meetingapp-git-main-angelseafarerswebsite.vercel.app",
     "VITE_APP_NAME": "MeetTime",
     "CORS_ORIGINS": "https://meetingapp-git-main-angelseafarerswebsite.vercel.app,https://www.meetingapp.org,https://meetingapp-puce.vercel.app",
     "RATE_LIMIT_WINDOW_MS": "900000",
