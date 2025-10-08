@@ -1,5 +1,5 @@
 <<<<<<< HEAD
-# MeetTime - Real-time Video Conferencing
+# MeetTime - Real-time Video Conferencing with Live Time Control
 
 A modern, production-ready video conferencing application built with React, TypeScript, Node.js, and WebRTC.
 
