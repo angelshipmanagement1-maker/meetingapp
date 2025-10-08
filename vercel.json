@@ -5,10 +5,10 @@
   "installCommand": "npm ci",
   "framework": null,
   "devCommand": "npm run dev",
-  "routes": [
+  "rewrites": [
     {
-      "src": "/(.*)",
-      "dest": "/index.html"
+      "source": "/(.*)",
+      "destination": "/index.html"
     }
   ],
   "env": {
