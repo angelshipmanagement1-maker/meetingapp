@@ -212,6 +212,15 @@ module.exports = async (req, res) => {
           }
         });
 
+        // Meeting leave
+        socket.on('meeting:leave', () => {
+          const userInfo = connectedUsers.get(socket.id);
+          if (userInfo) {
+            socket.leave(userInfo.meetingId);
+            socket.disconnect();
+          }
+        });
+
         socket.on('disconnect', () => {
           const userInfo = connectedUsers.get(socket.id);
           if (userInfo && meetings.has(userInfo.meetingId)) {
