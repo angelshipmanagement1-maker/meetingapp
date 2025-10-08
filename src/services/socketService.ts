@@ -27,7 +27,7 @@ export interface SocketEvents {
 
 class SocketService {
   private socket: Socket | null = null;
-  private serverUrl = import.meta.env.VITE_SERVER_URL || 'http://localhost:3001';
+  private serverUrl = import.meta.env.VITE_SERVER_URL || window.location.origin;
   private connectionAttempts = 0;
   private maxRetries = 5;
 
