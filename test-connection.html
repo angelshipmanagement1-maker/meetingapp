@@ -1,0 +1,57 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Socket.IO Connection Test</title>
+    <script src="https://cdn.socket.io/4.8.1/socket.io.min.js"></script>
+</head>
+<body>
+    <h1>Socket.IO Connection Test</h1>
+    <div id="status">Connecting...</div>
+    <div id="logs"></div>
+
+    <script>
+        const logs = document.getElementById('logs');
+        const status = document.getElementById('status');
+        
+        function log(message) {
+            logs.innerHTML += '<div>' + new Date().toLocaleTimeString() + ': ' + message + '</div>';
+        }
+
+        // Test connection to production
+        const socket = io('https://meetingapp-git-main-angelseafarerswebsite.vercel.app', {
+            path: '/socket.io/',
+            transports: ['polling', 'websocket']
+        });
+
+        socket.on('connect', () => {
+            status.textContent = 'Connected!';
+            status.style.color = 'green';
+            log('Connected to server');
+            
+            // Test meeting join
+            socket.emit('meeting:join', {
+                meetingId: 'test123',
+                displayName: 'Test User',
+                isHost: true,
+                participantId: 'test-user-' + Date.now()
+            });
+        });
+
+        socket.on('meeting:joined', (data) => {
+            log('Meeting joined successfully: ' + JSON.stringify(data));
+        });
+
+        socket.on('connect_error', (error) => {
+            status.textContent = 'Connection Failed';
+            status.style.color = 'red';
+            log('Connection error: ' + error.message);
+        });
+
+        socket.on('disconnect', () => {
+            status.textContent = 'Disconnected';
+            status.style.color = 'orange';
+            log('Disconnected from server');
+        });
+    </script>
+</body>
+</html>

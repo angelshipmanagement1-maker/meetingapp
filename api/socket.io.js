@@ -54,7 +54,11 @@ module.exports = (req, res) => {
       on: () => {}, // No-op
     };
 
-    io = new Server({
+    // Create HTTP server for Socket.IO
+    const http = require('http');
+    const server = http.createServer();
+    
+    io = new Server(server, {
       cors: {
         origin: allowedOrigins,
         methods: ["GET", "POST"],
@@ -305,10 +309,12 @@ module.exports = (req, res) => {
 
   // Handle Socket.IO requests
   try {
-    if (req.url && req.url.includes('/socket.io/')) {
-      // Let Socket.IO handle the request
-      io.engine.handleRequest(req, res);
-      return;
+    if (req.url && (req.url.includes('/socket.io/') || req.url === '/socket.io')) {
+      // Handle Socket.IO engine requests
+      if (io && io.engine) {
+        io.engine.handleRequest(req, res);
+        return;
+      }
     }
   } catch (error) {
     console.error('Socket.IO request handling error:', error);

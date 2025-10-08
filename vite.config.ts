@@ -6,7 +6,7 @@ import path from "path";
 import tsconfigPaths from "vite-tsconfig-paths";
 import nodePolyfills from 'rollup-plugin-node-polyfills';
 const config: UserConfig = {
-  mode: "development",
+  mode: process.env.NODE_ENV === 'production' ? 'production' : 'development',
   server: {
     port: 8080,
     host: true,
@@ -20,10 +20,9 @@ const config: UserConfig = {
   build: {
     outDir: "dist",
     emptyOutDir: true,
-    sourcemap: true,
-    minify: false,
-    cssMinify: false,
-    terserOptions: { compress: false, mangle: false },
+    sourcemap: process.env.NODE_ENV !== 'production',
+    minify: process.env.NODE_ENV === 'production',
+    cssMinify: process.env.NODE_ENV === 'production',
     rollupOptions: {
       external: [],
       output: {
@@ -36,7 +35,7 @@ const config: UserConfig = {
     }
   },
   define: {
-    "process.env.NODE_ENV": "'development'",
+    "process.env.NODE_ENV": JSON.stringify(process.env.NODE_ENV || 'development'),
     global: "globalThis",
     process: {
       env: {},

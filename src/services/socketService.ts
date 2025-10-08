@@ -32,19 +32,16 @@ class SocketService {
   private maxRetries = 5;
 
   private getServerUrl(): string {
-    // Always use Vercel URL for production deployments
-    if (window.location.hostname.includes('vercel.app') ||
-        window.location.hostname.includes('meetingapp.org') ||
-        window.location.hostname.includes('localhost') === false) {
-      return window.location.origin;
-    }
-
-    // Use environment variable for local development
     const envUrl = import.meta.env.VITE_SERVER_URL;
     if (envUrl) {
       return envUrl;
     }
-
+    
+    // For production, use same origin
+    if (window.location.hostname !== 'localhost' && window.location.hostname !== '127.0.0.1') {
+      return window.location.origin;
+    }
+    
     return 'http://localhost:3001';
   }
 
