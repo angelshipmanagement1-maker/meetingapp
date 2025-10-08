@@ -1,4 +1,6 @@
 // HTTP polling-based real-time service
+import { sanitizeMeetingData, generateParticipantId } from '../utils/meetingUtils';
+
 const API_BASE_URL = import.meta.env.VITE_SERVER_URL || 'http://localhost:3001';
 
 interface PollingMessage {
@@ -21,11 +23,12 @@ class PollingService {
       this.meetingId = data.meetingId;
       this.participantId = data.participantId;
       
-      const result = {
-        participantId: data.participantId,
+      const participantId = data.participantId || generateParticipantId();
+      const result = sanitizeMeetingData({
+        participantId,
         participants: [{
-          id: data.participantId,
-          name: data.displayName,
+          id: participantId,
+          name: data.displayName || 'Anonymous',
           role: data.isHost ? 'host' : 'participant',
           isMuted: false,
           isVideoOff: false,
@@ -34,7 +37,7 @@ class PollingService {
         currentDateTime: new Date().toISOString(),
         datetimeVersion: 0,
         chatMessages: []
-      };
+      });
       
       // Start polling
       this.startPolling();

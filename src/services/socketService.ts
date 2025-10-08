@@ -135,6 +135,10 @@ class SocketService {
     try {
       switch (event) {
         case 'meeting:join':
+          // Ensure participant ID is set
+          if (!data.participantId) {
+            data.participantId = `participant-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
+          }
           const result = await pollingService.joinMeeting(data);
           // Simulate the joined event
           setTimeout(() => {
