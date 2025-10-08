@@ -1,5 +1,6 @@
 const { Server } = require('socket.io');
 
+// Global state
 let io;
 const meetings = new Map();
 const users = new Map();
@@ -13,7 +14,7 @@ const CORS_ORIGINS = [
 
 module.exports = (req, res) => {
   try {
-    // CORS headers
+    // Set CORS headers
     const origin = req.headers.origin;
     if (CORS_ORIGINS.includes(origin)) {
       res.setHeader('Access-Control-Allow-Origin', origin);
@@ -27,7 +28,7 @@ module.exports = (req, res) => {
       return;
     }
 
-    // Initialize Socket.IO once
+    // Initialize Socket.IO server
     if (!io) {
       io = new Server({
         cors: {
@@ -35,7 +36,8 @@ module.exports = (req, res) => {
           methods: ["GET", "POST"],
           credentials: true
         },
-        transports: ['polling']
+        transports: ['polling'],
+        allowEIO3: true
       });
 
       io.on('connection', (socket) => {
